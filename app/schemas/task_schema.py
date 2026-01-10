@@ -1,6 +1,7 @@
-from datetime import date
+from datetime import date, datetime
 from pydantic import BaseModel, field_validator
 from models.task_model import TaskStatus
+from .user_schema import ShowUser
 
 
 class TaskCreate(BaseModel):
@@ -9,7 +10,7 @@ class TaskCreate(BaseModel):
     status: TaskStatus | None = TaskStatus.todo
     due_date: date | None = None
 
-    @field_validator("due_date", pre=True)  # type: ignore
+    @field_validator("due_date")  # type: ignore
     def parse_due_date(cls, v):
         if v is None:
             return None
@@ -29,7 +30,7 @@ class TaskUpdate(BaseModel):
     status: TaskStatus | None = TaskStatus.todo
     due_date: date | None = None
 
-    @field_validator("due_date", pre=True)  # type: ignore
+    @field_validator("due_date")  # type: ignore
     def parse_due_date(cls, v):
         if v is None:
             return None
@@ -49,9 +50,7 @@ class TaskResponse(BaseModel):
     description: str | None = None
     status: TaskStatus
     due_date: date | None = None
-    owner_id: str
-    created_at: date
-    updated_at: date
+    owner: ShowUser
 
     class Config:
         from_attributes = True

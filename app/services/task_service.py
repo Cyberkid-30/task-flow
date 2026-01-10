@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models.task_model import Task
+from models.task_model import Task, TaskStatus
 from schemas.task_schema import TaskCreate, TaskUpdate
 from schemas.user_schema import UserResponse
 from fastapi import HTTPException, status
@@ -16,6 +16,7 @@ def create_task(task: TaskCreate, db: Session, user: UserResponse):
     new_task = Task(title=task.title, description=task.description, owner_id=user.id)
     db.add(new_task)
     db.commit()
+    db.refresh(new_task)
 
     return new_task
 
@@ -51,15 +52,27 @@ def update_task(id: str, task: TaskUpdate, db: Session, user: UserResponse):
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authorized"
         )
 
+    # Check if the status is being updated to 'done'
+    if task.status == TaskStatus.done:
+        db.delete(db_task.first())
+        db.commit()
+        return {
+            "message": "Task deleted automatically as its status was set to 'done'."
+        }
+
     db_task.update(
         {
             "title": task.title,
-            "description": task.description,
-            "due_date": task.due_date,
+            "description": task.description
+            if task.description
+            else db_task.first().description,  # type: ignore
+            "due_date": task.due_date if task.due_date else db_task.first().due_date,  # type: ignore
+            "status": task.status if task.status else db_task.first().status,  # type: ignore
         }
     )
     db.commit()
     db.refresh(db_task.first())
+    return db_task.first()
 
 
 def delete_task(id: str, db: Session, user: UserResponse):
