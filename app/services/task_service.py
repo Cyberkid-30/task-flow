@@ -20,16 +20,21 @@ def create_task(task: TaskCreate, db: Session, user: UserResponse):
     return new_task
 
 
-def fetch_tasks(db: Session):
-    db_tasks = db.query(Task).all()
+def fetch_my_tasks(db: Session, user: UserResponse):
+    db_tasks = db.query(Task).filter(Task.owner_id == user.id).all()
     return db_tasks
 
 
-def fetch_task(id: str, db: Session):
+def fetch_task(id: str, db: Session, user: UserResponse):
     db_task = db.query(Task).filter(Task.id == id).first()
     if not db_task:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Task not found"
+        )
+
+    if db_task.owner_id != user.id:  # type: ignore
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authorized"
         )
     return db_task
 
@@ -58,10 +63,6 @@ def update_task(id: str, task: TaskUpdate, db: Session, user: UserResponse):
 
 
 def delete_task(id: str, db: Session, user: UserResponse):
-    db_task = fetch_task(id, db)
-    if db_task.owner_id != user.id:  # type: ignore
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authorized"
-        )
+    db_task = fetch_task(id, db, user)
     db.delete(db_task)
     db.commit()
