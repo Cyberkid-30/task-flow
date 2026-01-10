@@ -5,7 +5,7 @@ from api.routes.auth import auth_router
 import models  # noqa: F401
 
 
-app = FastAPI()
+app = FastAPI(title="Task-Flow API for efficient task management", version="1.0.0")
 Base.metadata.create_all(engine)
 
 
@@ -22,7 +22,9 @@ app.include_router(auth_router)
 # Root endpoint
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to Task-Flow API"}
+    return {
+        "message": "Welcome to Task-Flow API. An api to help to manage your daily tasks efficiently."
+    }
 
 
 # Health check endpoint
