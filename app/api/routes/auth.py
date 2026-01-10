@@ -1,9 +1,10 @@
 from fastapi import APIRouter, HTTPException, status
 from schemas.user_schema import UserCreate, UserLogin, UserResponse
-from ..deps import DBSession
+from ..deps import DBSession, Current_User_Dependency
 from models.user_model import User
 from sqlalchemy import or_, func
-from core.security import Bcrypt
+from core.security import Bcrypt, Token, authenticate_user, JWTHandler
+
 
 auth_router = APIRouter(prefix="/api/auth", tags=["Auth"])
 
@@ -49,4 +50,18 @@ def create_user(db: DBSession, request: UserCreate):
     return new_user
 
 
-# login endpoint
+@auth_router.post("/login", response_model=Token)
+def login(db: DBSession, request: UserLogin):
+    user = authenticate_user(request.username, request.password, db)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid credentials"
+        )
+
+    token = JWTHandler.encode_data({"sub": user.username, "user_id": user.id})
+    return Token(access_token=token)
+
+
+@auth_router.get("/me", response_model=UserResponse)
+def get_me(user: Current_User_Dependency):
+    return user

@@ -2,14 +2,14 @@ from datetime import datetime
 from uuid import uuid4
 
 from core.database import Base
-from sqlalchemy import UUID, Column, DateTime, String, BOOLEAN
+from sqlalchemy import Column, DateTime, String, BOOLEAN
 from sqlalchemy.orm import relationship
 
 
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid4)
+    id = Column(String(36), primary_key=True, index=True, default=str(uuid4()))
     username = Column(String, unique=True, index=True, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)

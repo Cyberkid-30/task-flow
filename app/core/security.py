@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 
-from api.deps import DBSession
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
@@ -8,6 +7,9 @@ from models.user_model import User
 from pwdlib import PasswordHash
 from pwdlib.hashers.bcrypt import BcryptHasher
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
+from core.database import get_db
+from schemas.user_schema import UserResponse
 
 from .config import Config
 
@@ -28,9 +30,14 @@ class Bcrypt:
         return pwd_context.verify(plain_password, hashed_password)
 
 
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "Bearer"
+
+
 class JWTHandler:
     @staticmethod
-    def encode_token(
+    def encode_data(
         data: dict,
         secret_key: str = Config.SECRET_KEY,
         algorithm: str = ALGORITHM,
@@ -70,7 +77,7 @@ def authenticate_user(username: str, password: str, db: Session):
 
 
 def get_current_user(
-    db: DBSession,
+    db: Session = Depends(get_db),
     token: str = Depends(oauth2_scheme),
 ):
     payload = JWTHandler.decode_token(token)
@@ -83,10 +90,10 @@ def get_current_user(
             detail="Invalid token. Could not validate user",
         )
 
-    user = db.query(User).get({"id": user_id})
+    user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
 
-    return user
+    return UserResponse(**user.__dict__)

@@ -1,7 +1,6 @@
 from datetime import date
 from pydantic import BaseModel, field_validator
 from models.task_model import TaskStatus
-from uuid import UUID
 
 
 class TaskCreate(BaseModel):
@@ -45,7 +44,7 @@ class TaskUpdate(BaseModel):
 
 
 class TaskResponse(BaseModel):
-    id: UUID
+    id: str
     title: str
     description: str | None = None
     status: TaskStatus
