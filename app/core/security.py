@@ -1,15 +1,15 @@
 from datetime import datetime, timedelta
 
+from core.database import get_db
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from models.user_model import User
 from pwdlib import PasswordHash
 from pwdlib.hashers.bcrypt import BcryptHasher
-from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from core.database import get_db
 from schemas.user_schema import UserResponse
+from sqlalchemy.orm import Session
 
 from .config import Config
 
@@ -39,7 +39,7 @@ class JWTHandler:
     @staticmethod
     def encode_data(
         data: dict,
-        secret_key: str = Config.SECRET_KEY, # type: ignore
+        secret_key: str = Config.SECRET_KEY,  # type: ignore
         algorithm: str = ALGORITHM,
         expires_in: timedelta | None = None,
     ) -> str:
@@ -55,7 +55,7 @@ class JWTHandler:
     @staticmethod
     def decode_token(
         token: str,
-        secret_key: str = Config.SECRET_KEY, # type: ignore
+        secret_key: str = Config.SECRET_KEY,  # type: ignore
         algorithms: list[str] = [ALGORITHM],
     ) -> dict:
         try:
@@ -76,10 +76,8 @@ def authenticate_user(username: str, password: str, db: Session):
     return user
 
 
-def get_current_user(
-    db: Session = Depends(get_db),
-    token: str = Depends(oauth2_scheme),
-):
+def validate_token(token: str) -> dict:
+    """Decode and validate the JWT token."""
     payload = JWTHandler.decode_token(token)
     username = payload.get("sub")
     user_id = payload.get("user_id")
@@ -90,10 +88,24 @@ def get_current_user(
             detail="Invalid token. Could not validate user",
         )
 
+    return payload
+
+
+def get_user_by_id(db: Session, user_id: str) -> User:
+    """Fetch a user by their ID."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
+    return user
 
+
+def get_current_user(
+    db: Session = Depends(get_db),
+    token: str = Depends(oauth2_scheme),
+) -> UserResponse:
+    """Retrieve the current user based on the provided JWT token."""
+    payload = validate_token(token)
+    user = get_user_by_id(db, payload["user_id"])
     return UserResponse(**user.__dict__)
