@@ -1,5 +1,5 @@
-from datetime import date, datetime
-from pydantic import BaseModel, field_validator
+from datetime import date
+from pydantic import BaseModel, field_validator, model_validator
 from models.task_model import TaskStatus
 from .user_schema import ShowUser
 
@@ -23,6 +23,12 @@ class TaskCreate(BaseModel):
                 raise ValueError("due_date must be a valid ISO 8601 date: YYYY-MM-DD")
         raise ValueError("due_date must be a date or ISO-8601 string")
 
+    @model_validator(mode="after")
+    def check_due_date_not_past(self):
+        if self.due_date is not None and self.due_date < date.today():
+            raise ValueError("due_date must be today or a future date")
+        return self
+
 
 class TaskUpdate(BaseModel):
     title: str
@@ -42,6 +48,12 @@ class TaskUpdate(BaseModel):
             except Exception:
                 raise ValueError("due_date must be a valid ISO 8601 date: YYYY-MM-DD")
         raise ValueError("due_date must be a date or ISO-8601 string")
+
+    @model_validator(mode="after")
+    def check_due_date_not_past(self):
+        if self.due_date is not None and self.due_date < date.today():
+            raise ValueError("due_date must be today or a future date")
+        return self
 
 
 class TaskResponse(BaseModel):
