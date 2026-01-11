@@ -61,8 +61,11 @@ class JWTHandler:
         try:
             payload = jwt.decode(token, secret_key, algorithms=algorithms)
             return payload
-        except JWTError as e:
-            raise ValueError("Invalid token") from e
+        except JWTError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token. Could not validate user",
+            )
 
 
 def authenticate_user(username: str, password: str, db: Session):
