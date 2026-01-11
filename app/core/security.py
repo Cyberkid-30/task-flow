@@ -39,7 +39,7 @@ class JWTHandler:
     @staticmethod
     def encode_data(
         data: dict,
-        secret_key: str = Config.SECRET_KEY,
+        secret_key: str = Config.SECRET_KEY, # type: ignore
         algorithm: str = ALGORITHM,
         expires_in: timedelta | None = None,
     ) -> str:
@@ -55,7 +55,7 @@ class JWTHandler:
     @staticmethod
     def decode_token(
         token: str,
-        secret_key: str = Config.SECRET_KEY,
+        secret_key: str = Config.SECRET_KEY, # type: ignore
         algorithms: list[str] = [ALGORITHM],
     ) -> dict:
         try:
