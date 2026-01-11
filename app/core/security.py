@@ -68,8 +68,8 @@ class JWTHandler:
             )
 
 
-def authenticate_user(username: str, password: str, db: Session):
-    user = db.query(User).filter(User.username == username).first()
+def authenticate_user(email: str, password: str, db: Session):
+    user = db.query(User).filter(User.email == email).first()
     if not user:
         return False
 

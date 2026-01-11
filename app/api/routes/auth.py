@@ -52,7 +52,7 @@ def create_user(db: DBSession, request: UserCreate):
 
 @auth_router.post("/login", response_model=Token)
 def login(db: DBSession, request: UserLogin):
-    user = authenticate_user(request.username, request.password, db)
+    user = authenticate_user(request.email, request.password, db)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid credentials"
