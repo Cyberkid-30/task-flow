@@ -68,6 +68,22 @@ app/
 - **Update Task**: `PUT /api/tasks/{id}`
 - **Delete Task**: `DELETE /api/tasks/{id}`
 
+### Authentication Endpoints
+
+- **Register User**: `POST /api/auth/register`
+  - Registers a new user with a unique username and email.
+- **Login**: `POST /api/auth/login`
+  - Authenticates a user and returns a JWT token.
+- **Get Current User**: `GET /api/auth/me`
+  - Retrieves the details of the currently authenticated user.
+
+## Authentication and Authorization
+
+- **Registration**: Users can register with a unique username and email. Passwords are hashed using `bcrypt` before being stored in the database.
+- **Login**: Users log in with their username and password. A JWT token is issued upon successful authentication.
+- **JWT Authentication**: All protected endpoints require a valid JWT token in the `Authorization` header (e.g., `Bearer <token>`).
+- **Authorization**: Tasks are tied to their respective owners. Users can only manage their own tasks. Unauthorized access results in a `401 Unauthorized` error.
+
 ## Automatic Cleanup
 
 - Tasks are automatically deleted when:
@@ -91,6 +107,4 @@ app/
    ```
 5. Open a pull request.
 
-## License
 
-This project is licensed under the MIT License.

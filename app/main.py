@@ -1,17 +1,57 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from core.database import Base, engine
+import logging
+from datetime import datetime, timezone
+
+import models  # noqa: F401
 from api.routes.auth import auth_router
 from api.routes.task import task_router
+from core.database import Base, SessionLocal, engine
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi_utils.tasks import repeat_every
-from datetime import datetime
 from models.task_model import Task
-import models  # noqa: F401
+from sqlalchemy.orm import Session
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+Base.metadata.create_all(engine)
+
+
+def schedule_task_cleanup(app: FastAPI) -> None:
+    @repeat_every(seconds=60, wait_first=True)
+    def delete_expired_tasks() -> None:
+        logger.info("Running scheduled task cleanup...")
+
+        db: Session = SessionLocal()
+        try:
+            today = datetime.now(timezone.utc).date()
+
+            expired_tasks = db.query(Task).filter(Task.due_date < today).all()
+
+            if not expired_tasks:
+                logger.info("No expired tasks found.")
+                return
+
+            logger.info("Found %s expired tasks.", len(expired_tasks))
+
+            for task in expired_tasks:
+                logger.info("Deleting task %s - %s", task.id, task.title)
+                db.delete(task)
+
+            db.commit()
+            logger.info("Expired tasks cleanup completed.")
+
+        except Exception:
+            db.rollback()
+            logger.exception("Task cleanup failed")
+
+        finally:
+            db.close()
 
 
 app = FastAPI(title="Task-Flow API for efficient task management", version="1.0.0")
-Base.metadata.create_all(engine)
 
+schedule_task_cleanup(app)
 
 app.add_middleware(
     CORSMiddleware,
@@ -20,6 +60,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Schedule the task cleanup job
+
 app.include_router(auth_router)
 app.include_router(task_router)
 
@@ -38,16 +81,4 @@ def health_check():
     return {"status": "ok"}
 
 
-def schedule_task_cleanup(app):
-    @app.on_event("startup")
-    @repeat_every(seconds=86400)  # Run once a day
-    def delete_expired_tasks():
-        with (
-            app.state.db_session() as db
-        ):  # Assuming `db_session` is set up in app state
-            expired_tasks = (
-                db.query(Task).filter(Task.due_date < datetime.now().date()).all()
-            )
-            for task in expired_tasks:
-                db.delete(task)
-            db.commit()
+# Rather check tasks for their due dates and update their status to done so they get deleted automatically.
