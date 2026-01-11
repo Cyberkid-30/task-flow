@@ -32,7 +32,7 @@ def get_my_tasks(db: DBSession, user: Current_User_Dependency):
     except DatabaseError:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An error occurred while creating the task",
+            detail="An error occurred while fetching tasks",
         )
     return tasks
 
@@ -44,19 +44,19 @@ def get_task(id: str, db: DBSession, user: Current_User_Dependency):
     except DatabaseError:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An error occurred while creating the task",
+            detail="An error occurred while fetching task",
         )
     return task
 
 
 @task_router.put("/{id}", response_model=TaskResponse | dict)
-def updte(id: str, task: TaskUpdate, db: DBSession, user: Current_User_Dependency):
+def update(id: str, task: TaskUpdate, db: DBSession, user: Current_User_Dependency):
     try:
         updated_task = update_task(id, task, db, user)
     except DatabaseError:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An error occurred while creating the task",
+            detail="An error occurred while updating task",
         )
     return updated_task
 
@@ -68,7 +68,7 @@ def delete(id: str, db: DBSession, user: Current_User_Dependency):
     except DatabaseError:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An error occurred while creating the task",
+            detail="An error occurred while deleting task",
         )
 
     return {"message": "Task deleted successfully"}
