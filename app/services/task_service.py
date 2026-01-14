@@ -3,6 +3,7 @@ from models.task_model import Task, TaskStatus
 from schemas.task_schema import TaskCreate, TaskUpdate
 from schemas.user_schema import UserResponse
 from fastapi import HTTPException, status
+from datetime import datetime
 
 
 def create_task(task: TaskCreate, db: Session, user: UserResponse):
@@ -85,3 +86,25 @@ def delete_task(id: str, db: Session, user: UserResponse):
     db_task = fetch_task(id, db, user)
     db.delete(db_task)
     db.commit()
+
+
+def delete_completed_or_due_tasks(db: Session):
+    """Delete tasks that are marked as done or have passed their due date
+
+    Returns:
+        int: Number of tasks deleted
+    """
+    tasks_to_delete = (
+        db.query(Task)
+        .filter(
+            (Task.status == TaskStatus.done) | (Task.due_date <= datetime.now().date())
+        )
+        .all()
+    )
+
+    count = len(tasks_to_delete)
+    for task in tasks_to_delete:
+        db.delete(task)
+
+    db.commit()
+    return count
