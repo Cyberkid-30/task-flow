@@ -53,7 +53,8 @@ app/
 
 1. Start the FastAPI server:
    ```bash
-   uvicorn app.main:app --reload
+   cd app
+   uvicorn main:app --reload
    ```
 2. Open your browser and navigate to:
    [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) to access the interactive API documentation.
