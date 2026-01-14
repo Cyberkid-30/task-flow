@@ -13,7 +13,13 @@ def create_task(task: TaskCreate, db: Session, user: UserResponse):
             detail="A task with this title already exists",
         )
 
-    new_task = Task(title=task.title, description=task.description, owner_id=user.id)
+    new_task = Task(
+        title=task.title,
+        description=task.description,
+        status=task.status,
+        due_date=task.due_date,
+        owner_id=user.id,
+    )
     db.add(new_task)
     db.commit()
     db.refresh(new_task)
