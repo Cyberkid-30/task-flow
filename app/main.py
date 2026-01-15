@@ -94,7 +94,7 @@ app = FastAPI(
 
 # Configure CORS based on environment
 allowed_origins = [
-    "http://localhost:3000",  # Local development
+    "http://localhost:5173",  # Local development
     "http://localhost:8000",  # Local API
     "https://*.vercel.app",  # Vercel deployments
     "https://*.netlify.app",  # Netlify deployments
@@ -138,7 +138,7 @@ def health_check():
     try:
         # Test database connectivity
         db = SessionLocal()
-        db.execute("SELECT 1") # type: ignore
+        db.execute("SELECT 1")  # type: ignore
         db.close()
         return {
             "status": "ok",
