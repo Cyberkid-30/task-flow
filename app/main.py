@@ -94,11 +94,10 @@ app = FastAPI(
 
 # Configure CORS based on environment
 allowed_origins = [
+    "https://task-flow-frontend-jade.vercel.app",
     "http://localhost:5173",  # Local development
     "http://localhost:8000",  # Local API
     "https://*.vercel.app",  # Vercel deployments
-    "https://*.netlify.app",  # Netlify deployments
-    "https://*.onrender.com",  # Render deployments
 ]
 
 # Allow all origins in development, specific origins in production
