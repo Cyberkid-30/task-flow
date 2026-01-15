@@ -59,14 +59,6 @@ def update_task(id: str, task: TaskUpdate, db: Session, user: UserResponse):
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authorized"
         )
 
-    # Check if the status is being updated to 'done'
-    if task.status == TaskStatus.done:
-        db.delete(db_task.first())
-        db.commit()
-        return {
-            "message": "Task deleted automatically as its status was set to 'done'."
-        }
-
     db_task.update(
         {
             "title": task.title,
