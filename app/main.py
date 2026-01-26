@@ -9,6 +9,8 @@ from contextlib import asynccontextmanager
 import asyncio
 import logging
 import os
+from sqlalchemy import select
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -137,12 +139,12 @@ def health_check():
     try:
         # Test database connectivity
         db = SessionLocal()
-        db.execute("SELECT 1")  # type: ignore
+        db.execute(select(1))  # type: ignore
         db.close()
         return {
             "status": "ok",
             "database": "connected",
-            "environment": os.getenv("ENVIRONMENT", "unknown"),
+            "environment": Config.ENVIRONMENT,
         }
     except Exception as e:
         logger.error(f"Health check failed: {e}")
