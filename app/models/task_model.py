@@ -19,7 +19,7 @@ class Task(Base):
     __tablename__ = "tasks"
 
     id = Column(String(36), primary_key=True, index=True, default=lambda: str(uuid4()))
-    title = Column(String, nullable=False)
+    title = Column(String, nullable=False,unique=True, index=True)
     description = Column(String, nullable=True)
     status = Column(SQLEnum(TaskStatus), default=TaskStatus.todo, nullable=False)
     due_date = Column(
