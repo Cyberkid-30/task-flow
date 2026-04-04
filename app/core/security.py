@@ -45,7 +45,7 @@ class JWTHandler:
     ) -> str:
         to_encode = data.copy()
         if expires_in:
-            expires = expires_in
+            expires = datetime.now() + expires_in
         else:
             expires = datetime.now() + timedelta(minutes=Config.TOKEN_EXPIRE_MINUTES)
         to_encode.update({"exp": expires})
