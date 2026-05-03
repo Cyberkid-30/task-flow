@@ -79,21 +79,6 @@ def authenticate_user(email: str, password: str, db: Session):
     return user
 
 
-def validate_token(token: str) -> dict:
-    """Decode and validate the JWT token."""
-    payload = JWTHandler.decode_token(token)
-    username = payload.get("sub")
-    user_id = payload.get("user_id")
-
-    if not username or not user_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token. Could not validate user",
-        )
-
-    return payload
-
-
 def get_user_by_id(db: Session, user_id: str) -> User:
     """Fetch a user by their ID."""
     user = db.query(User).filter(User.id == user_id).first()
@@ -109,6 +94,6 @@ def get_current_user(
     token: str = Depends(oauth2_scheme),
 ) -> UserResponse:
     """Retrieve the current user based on the provided JWT token."""
-    payload = validate_token(token)
+    payload = JWTHandler.decode_token(token)
     user = get_user_by_id(db, payload["user_id"])
     return UserResponse(**user.__dict__)
