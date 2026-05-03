@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from models.task_model import Task, TaskStatus
 from schemas.task_schema import TaskCreate, TaskUpdate
 from schemas.user_schema import UserResponse
@@ -48,30 +49,23 @@ def fetch_task(id: str, db: Session, user: UserResponse):
 
 
 def update_task(id: str, task: TaskUpdate, db: Session, user: UserResponse):
-    db_task = db.query(Task).filter(Task.id == id)
-    if not db_task.first():
+    task_query = db.query(Task).filter(Task.id == id)
+    db_task = task_query.first()
+
+    if not db_task:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Task not found"
         )
 
-    if db_task.first().owner_id != user.id:  # type: ignore
+    if db_task.owner_id != user.id:  # type: ignore
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authorized"
         )
 
-    db_task.update(
-        {
-            "title": task.title,
-            "description": task.description
-            if task.description
-            else db_task.first().description,  # type: ignore
-            "due_date": task.due_date if task.due_date else db_task.first().due_date,  # type: ignore
-            "status": task.status if task.status else db_task.first().status,  # type: ignore
-        }
-    )
+    task_query.update(task.model_dump(), synchronize_session=False)  # type: ignore
     db.commit()
-    db.refresh(db_task.first())
-    return db_task.first()
+    db.refresh(db_task)
+    return db_task
 
 
 def delete_task(id: str, db: Session, user: UserResponse):
@@ -89,7 +83,7 @@ def delete_completed_or_due_tasks(db: Session):
     tasks_to_delete = (
         db.query(Task)
         .filter(
-            (Task.status == TaskStatus.done) | (Task.due_date <= datetime.now().date())
+            or_(Task.status == TaskStatus.done, Task.due_date <= datetime.now().date())
         )
         .all()
     )
