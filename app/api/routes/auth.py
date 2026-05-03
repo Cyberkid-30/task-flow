@@ -28,12 +28,12 @@ def create_user(db: DBSession, request: UserCreate):
     )
 
     if existing_user:
-        if existing_user.username == normalized_username:  # type: ignore
+        if str(existing_user.username) == normalized_username:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="A user with this username already exists",
             )
-        if existing_user.email and existing_user.email.lower() == normalized_email:  # type: ignore
+        if existing_user.email.lower() == normalized_email:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="A user with this email already exists",
