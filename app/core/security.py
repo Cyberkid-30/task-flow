@@ -70,11 +70,9 @@ class JWTHandler:
 
 def authenticate_user(email: str, password: str, db: Session):
     user = db.query(User).filter(User.email == email).first()
-    if not user:
-        return False
 
-    if not Bcrypt.verify_password(password, user.hashed_password):  # type: ignore
-        return False
+    if not user or not Bcrypt.verify_password(password, user.hashed_password):  # type: ignore
+        return
 
     return user
 
