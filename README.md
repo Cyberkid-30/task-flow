@@ -36,7 +36,7 @@ app/
 
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/Cyberkid-30/task-flow.git
    cd task-flow
    ```
 2. Create a virtual environment:
