@@ -1,16 +1,16 @@
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy.exc import DatabaseError
-from schemas.task_schema import TaskCreate, TaskUpdate, TaskResponse
-from api.deps import Current_User_Dependency, DBSession
-from services import task_service
+from ...schemas.task_schema import TaskCreate, TaskUpdate, TaskResponse
+from ...api.deps import Current_User_Dependency, DB_Session
+from ...services import task_service
 
 task_router = APIRouter(prefix="/api/tasks", tags=["Tasks"])
 
 
 @task_router.post("/", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
-def create(request: TaskCreate, db: DBSession, user: Current_User_Dependency):
+async def create(request: TaskCreate, db: DB_Session, user: Current_User_Dependency):
     try:
-        task = task_service.create_task(request, db, user)
+        task = await task_service.create_task(request, db, user)
     except DatabaseError:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -20,9 +20,11 @@ def create(request: TaskCreate, db: DBSession, user: Current_User_Dependency):
 
 
 @task_router.get("/", response_model=list[TaskResponse])
-def get_my_tasks(db: DBSession, user: Current_User_Dependency):
+async def get_my_tasks(
+    db: DB_Session, user: Current_User_Dependency, skip: int = 0, limit: int = 10
+):
     try:
-        tasks = task_service.fetch_my_tasks(db, user)
+        tasks = await task_service.fetch_my_tasks(db, user, skip, limit)
     except DatabaseError:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -32,9 +34,9 @@ def get_my_tasks(db: DBSession, user: Current_User_Dependency):
 
 
 @task_router.get("/{id}", response_model=TaskResponse)
-def get_task(id: str, db: DBSession, user: Current_User_Dependency):
+async def get_task(id: str, db: DB_Session, user: Current_User_Dependency):
     try:
-        task = task_service.fetch_task(id, db, user)
+        task = await task_service.fetch_task(id, db, user)
     except DatabaseError:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -43,10 +45,12 @@ def get_task(id: str, db: DBSession, user: Current_User_Dependency):
     return task
 
 
-@task_router.put("/{id}", response_model=TaskResponse | dict)
-def update(id: str, task: TaskUpdate, db: DBSession, user: Current_User_Dependency):
+@task_router.put("/{id}", response_model=TaskResponse)
+async def update(
+    id: str, task: TaskUpdate, db: DB_Session, user: Current_User_Dependency
+):
     try:
-        updated_task = task_service.update_task(id, task, db, user)
+        updated_task = await task_service.update_task(id, task, db, user)
     except DatabaseError:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -56,9 +60,9 @@ def update(id: str, task: TaskUpdate, db: DBSession, user: Current_User_Dependen
 
 
 @task_router.delete("/{id}")
-def delete(id: str, db: DBSession, user: Current_User_Dependency):
+async def delete(id: str, db: DB_Session, user: Current_User_Dependency):
     try:
-        task_service.delete_task(id, db, user)
+        await task_service.delete_task(id, db, user)
     except DatabaseError:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -66,3 +70,4 @@ def delete(id: str, db: DBSession, user: Current_User_Dependency):
         )
 
     return {"message": "Task deleted successfully"}
+
