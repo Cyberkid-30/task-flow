@@ -6,7 +6,8 @@ load_dotenv()
 
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY")
-    DATABASE_URL = os.getenv("DATABASE_URL")
+    DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./test.db")
+    SYNC_DATABASE_URL = os.getenv("SYNC_DATABASE_URL", "sqlite:///./test.db")
     TOKEN_EXPIRE_MINUTES = int(os.getenv("TOKEN_EXPIRE_MINUTES", "15"))
     ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
 
@@ -19,7 +20,7 @@ class Config:
             raise ValueError("DATABASE_URL environment variable is not set")
         if len(cls.SECRET_KEY) < 32:
             raise ValueError("SECRET_KEY must be at least 32 characters long")
-        if not cls.DATABASE_URL.startswith(("postgresql://", "postgres://")):
+        if not cls.DATABASE_URL.startswith("postgresql+asyncpg://"):
             raise ValueError(
                 "DATABASE_URL must be a valid PostgreSQL connection string"
             )

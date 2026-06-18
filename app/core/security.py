@@ -1,16 +1,16 @@
 from datetime import datetime, timedelta
 
-from core.database import get_db
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from models.user_model import User
 from pwdlib import PasswordHash
 from pwdlib.hashers.bcrypt import BcryptHasher
 from pydantic import BaseModel
-from schemas.user_schema import UserResponse
-from sqlalchemy.orm import Session
+from sqlalchemy import select
 
+from ..core.database import AsyncSession, get_async_db
+from ..models.user_model import User
+from ..schemas.user_schema import UserResponse
 from .config import Config
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
@@ -68,8 +68,9 @@ class JWTHandler:
             )
 
 
-def authenticate_user(email: str, password: str, db: Session):
-    user = db.query(User).filter(User.email == email).first()
+async def authenticate_user(email: str, password: str, db: AsyncSession):
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
 
     if not user or not Bcrypt.verify_password(password, user.hashed_password):  # type: ignore
         return
@@ -77,21 +78,20 @@ def authenticate_user(email: str, password: str, db: Session):
     return user
 
 
-def get_user_by_id(db: Session, user_id: str) -> User:
-    """Fetch a user by their ID."""
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-        )
-    return user
-
-
-def get_current_user(
-    db: Session = Depends(get_db),
+async def get_current_user(
+    db: AsyncSession = Depends(get_async_db),
     token: str = Depends(oauth2_scheme),
 ) -> UserResponse:
     """Retrieve the current user based on the provided JWT token."""
     payload = JWTHandler.decode_token(token)
-    user = get_user_by_id(db, payload["user_id"])
-    return UserResponse(**user.__dict__)
+
+    result = await db.execute(select(User).where(User.username == payload.get("sub")))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authorized to access this resource",
+        )
+
+    return UserResponse(**user.to_dict())
