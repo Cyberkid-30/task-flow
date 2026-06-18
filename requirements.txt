@@ -4,6 +4,7 @@ annotated-types==0.7.0
 anyio==4.12.1
 argon2-cffi==25.1.0
 argon2-cffi-bindings==25.1.0
+asyncpg==0.31.0
 bcrypt==5.0.0
 cffi==2.0.0
 click==8.3.1
@@ -21,7 +22,8 @@ MarkupSafe==3.0.3
 mypy_extensions==1.1.0
 passlib==1.7.4
 psutil==5.9.8
-psycopg2-binary==2.9.11
+psycopg2==2.9.11
+psycopg2-binary==2.9.12
 pwdlib==0.3.0
 pyasn1==0.6.1
 pycparser==2.23
