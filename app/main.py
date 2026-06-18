@@ -1,16 +1,17 @@
-from api.routes.auth import auth_router
-from api.routes.task import task_router
-from core.database import Base, engine, SessionLocal
-from core.config import Config
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from services.task_service import delete_completed_or_due_tasks
-from contextlib import asynccontextmanager
 import asyncio
 import logging
 import os
-from sqlalchemy import select
+from contextlib import asynccontextmanager
 
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
+
+from .api.routes.auth import auth_router
+from .api.routes.task import task_router
+from .core.config import Config
+from .core.database import AsyncSessionLocal, init_db
+from .services.task_service import delete_completed_or_due_tasks
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -24,7 +25,6 @@ except ValueError as e:
     logger.error(f"Configuration error: {e}")
     raise
 
-Base.metadata.create_all(engine)
 
 # Track background task across lifespan
 _cleanup_task = None
@@ -32,6 +32,10 @@ _cleanup_task = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Startup: Initialize the database
+    await init_db()
+    logger.info("Database initialized successfully")
+
     # Startup: Start background task only if this is the primary instance
     global _cleanup_task
     is_render = os.getenv("RENDER") == "true"
@@ -71,13 +75,10 @@ async def cleanup_tasks_periodically():
 
     while True:
         try:
-            db = SessionLocal()
-            try:
-                deleted_count = delete_completed_or_due_tasks(db)
+            async with AsyncSessionLocal() as db:
+                deleted_count = await delete_completed_or_due_tasks(db)
                 if deleted_count > 0:
                     logger.info(f"Deleted {deleted_count} completed or overdue tasks")
-            finally:
-                db.close()
         except Exception as e:
             logger.error(f"Error in cleanup_tasks_periodically: {e}")
 
@@ -135,12 +136,10 @@ def read_root():
 
 # Health check endpoint with database connectivity test
 @app.get("/health")
-def health_check():
+async def health_check():
     try:
-        # Test database connectivity
-        db = SessionLocal()
-        db.execute(select(1))  # type: ignore
-        db.close()
+        async with AsyncSessionLocal() as db:
+            await db.execute(text("SELECT 1"))
         return {
             "status": "ok",
             "database": "connected",
