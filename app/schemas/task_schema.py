@@ -61,7 +61,7 @@ class TaskResponse(BaseModel):
     title: str
     description: str | None = None
     status: TaskStatus
-    due_date: date | None = None
+    due_date: date
     owner: ShowUser
 
     class Config:
