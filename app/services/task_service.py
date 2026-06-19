@@ -79,23 +79,18 @@ async def update_task(id: str, task: TaskUpdate, db: AsyncSession, user: UserRes
             status_code=status.HTTP_404_NOT_FOUND, detail="Task not found"
         )
 
-    if db_task.owner_id != user.id:  # type: ignore
+    if db_task.owner_id != user.id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authorized"
         )
 
-    db_task.title = task.title
-    db_task.description = task.description
-    db_task.status = task.status
-    db_task.due_date = task.due_date  # type: ignore
+    update_data = task.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_task, field, value)
 
     await db.commit()
     await db.refresh(db_task)
-
-    result = await db.execute(
-        select(Task).options(selectinload(Task.owner)).where(Task.id == db_task.id)
-    )
-    return result.scalar_one()
+    return db_task
 
 
 async def delete_task(id: str, db: AsyncSession, user: UserResponse):
@@ -104,23 +99,18 @@ async def delete_task(id: str, db: AsyncSession, user: UserResponse):
     await db.commit()
 
 
-async def delete_completed_or_due_tasks(db: AsyncSession):
-    """Delete tasks that are marked as done or have passed their due date
-
-    Returns:
-        int: Number of tasks deleted
-    """
-    try:
-        result = await db.execute(
-            select(Task).where(
+async def delete_completed_or_due_tasks(db: AsyncSession, user_id: str):
+    result = await db.execute(
+        select(Task).where(
+            and_(
+                Task.owner_id == user_id,
                 or_(
                     Task.status == TaskStatus.done,
                     Task.due_date <= datetime.now().date(),
-                )
+                ),
             )
         )
-    except Exception as e:
-        raise e
+    )
 
     tasks_to_delete = result.scalars().all()
 
