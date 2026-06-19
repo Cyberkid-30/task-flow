@@ -1,8 +1,8 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, date
 from enum import Enum as PyEnum
 from uuid import uuid4
 
-from sqlalchemy import DateTime, ForeignKey, String
+from sqlalchemy import Date, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..core.database import Base
@@ -24,23 +24,23 @@ class Task(Base):
     title: Mapped[str] = mapped_column(String, nullable=False, index=True)
     description: Mapped[str] = mapped_column(String, nullable=False)
     status: Mapped[TaskStatus] = mapped_column(default=TaskStatus.todo, nullable=False)
-    due_date: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
+    due_date: Mapped[date] = mapped_column(
+        Date,
         nullable=True,
-        default=lambda: datetime.now(timezone.utc) + timedelta(days=7),
+        default=lambda: (datetime.now(timezone.utc) + timedelta(days=7)).date(),
     )
     owner_id: Mapped[str] = mapped_column(
         String, ForeignKey("users.id"), nullable=False, index=True
     )
     owner = relationship("User", back_populates="tasks")
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    created_at: Mapped[date] = mapped_column(
+        Date, default=lambda: datetime.now(timezone.utc).date()
     )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+    updated_at: Mapped[date] = mapped_column(
+        Date,
+        default=lambda: datetime.now(timezone.utc).date(),
+        onupdate=lambda: datetime.now(timezone.utc).date(),
     )
 
     def to_dict(self):
@@ -52,6 +52,7 @@ class Task(Base):
             "status": self.status.value,
             "due_date": self.due_date.isoformat() if self.due_date else None,
             "owner_id": str(self.owner_id),
+            "owner": self.owner.to_dict() if self.owner else None,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
         }
