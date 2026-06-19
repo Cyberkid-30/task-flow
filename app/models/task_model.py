@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone, date
 from enum import Enum as PyEnum
 from uuid import uuid4
 
-from sqlalchemy import Date, ForeignKey, String
+from sqlalchemy import DateTime, Date, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..core.database import Base
@@ -34,13 +34,13 @@ class Task(Base):
     )
     owner = relationship("User", back_populates="tasks")
 
-    created_at: Mapped[date] = mapped_column(
-        Date, default=lambda: datetime.now(timezone.utc).date()
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
-    updated_at: Mapped[date] = mapped_column(
-        Date,
-        default=lambda: datetime.now(timezone.utc).date(),
-        onupdate=lambda: datetime.now(timezone.utc).date(),
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )
 
     def to_dict(self):
@@ -53,6 +53,6 @@ class Task(Base):
             "due_date": self.due_date.isoformat() if self.due_date else None,
             "owner_id": str(self.owner_id),
             "owner": self.owner.to_dict() if self.owner else None,
-            "created_at": self.created_at.isoformat(),
-            "updated_at": self.updated_at.isoformat(),
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
         }
