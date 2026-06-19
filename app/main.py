@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -11,7 +10,6 @@ from .api.routes.auth import auth_router
 from .api.routes.task import task_router
 from .core.config import settings
 from .core.database import AsyncSessionLocal, init_db
-from .services.task_service import delete_completed_or_due_tasks
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -26,67 +24,11 @@ except ValueError as e:
     raise
 
 
-# Track background task across lifespan
-_cleanup_task = None
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Initialize the database
     await init_db()
     logger.info("Database initialized successfully")
-
-    # Startup: Start background task only if this is the primary instance
-    global _cleanup_task
-    is_render = os.getenv("RENDER") == "true"
-    is_railway = os.getenv("RAILWAY_ENVIRONMENT") is not None
-    is_heroku = os.getenv("DYNO") is not None
-
-    # Only run background task on single-instance or primary instances
-    should_run_cleanup = (
-        not (is_render or is_railway or is_heroku)
-        or os.getenv("RUN_BACKGROUND_TASKS", "true") == "true"
-    )
-
-    if should_run_cleanup:
-        _cleanup_task = asyncio.create_task(cleanup_tasks_periodically())
-        logger.info("Background task cleanup started")
-    else:
-        logger.info(
-            "Background task cleanup skipped (not primary dyno or scaled environment)"
-        )
-
     yield
-
-    # Shutdown: Cancel background task
-    if _cleanup_task:
-        logger.info("Shutting down background task cleanup")
-        _cleanup_task.cancel()
-        try:
-            await _cleanup_task
-        except asyncio.CancelledError:
-            logger.info("Background task cleanup cancelled successfully")
-
-
-async def cleanup_tasks_periodically():
-    """Periodically delete tasks that are done or past due date"""
-    # Wait a bit before first run to allow app to fully start
-    await asyncio.sleep(5)
-
-    while True:
-        try:
-            async with AsyncSessionLocal() as db:
-                deleted_count = await delete_completed_or_due_tasks(db)
-                if deleted_count > 0:
-                    logger.info(f"Deleted {deleted_count} completed or overdue tasks")
-        except Exception as e:
-            logger.error(f"Error in cleanup_tasks_periodically: {e}")
-
-        # Sleep for 1 hour
-        try:
-            await asyncio.sleep(60 * 60)
-        except asyncio.CancelledError:
-            break
 
 
 app = FastAPI(
@@ -100,7 +42,6 @@ allowed_origins = [
     "https://task-flow-frontend-jade.vercel.app",
     "http://localhost:5173",  # Local development
     "http://localhost:8000",  # Local API
-    "https://*.vercel.app",  # Vercel deployments
 ]
 
 # Allow all origins in development, specific origins in production
