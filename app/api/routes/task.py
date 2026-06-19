@@ -16,7 +16,7 @@ async def create(request: TaskCreate, db: DB_Session, user: Current_User_Depende
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An error occurred while creating the task",
         )
-    return task
+    return task.to_dict()
 
 
 @task_router.get("/", response_model=list[TaskResponse])
@@ -30,7 +30,7 @@ async def get_my_tasks(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An error occurred while fetching tasks",
         )
-    return tasks
+    return [task.to_dict() for task in tasks]
 
 
 @task_router.get("/{id}", response_model=TaskResponse)
@@ -42,7 +42,7 @@ async def get_task(id: str, db: DB_Session, user: Current_User_Dependency):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An error occurred while fetching task",
         )
-    return task
+    return task.to_dict()
 
 
 @task_router.put("/{id}", response_model=TaskResponse)
@@ -56,7 +56,7 @@ async def update(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An error occurred while updating task",
         )
-    return updated_task
+    return updated_task.to_dict()
 
 
 @task_router.delete("/{id}")
@@ -70,4 +70,3 @@ async def delete(id: str, db: DB_Session, user: Current_User_Dependency):
         )
 
     return {"message": "Task deleted successfully"}
-
