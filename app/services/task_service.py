@@ -43,6 +43,7 @@ async def fetch_my_tasks(
         select(Task)
         .options(selectinload(Task.owner))
         .where(Task.owner_id == user.id)
+        .order_by(Task.created_at.desc())
         .offset(offset)
         .limit(limit)
     )
