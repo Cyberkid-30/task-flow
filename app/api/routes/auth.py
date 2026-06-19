@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, status
 
 from ...core.security import JWTHandler, Token, authenticate_user
 from ...schemas.user_schema import UserCreate, UserLogin, UserResponse
-from ...services.user_service import add_user
+from ...services import user_service
 from ..deps import Current_User_Dependency, DB_Session
 
 auth_router = APIRouter(prefix="/api/auth", tags=["Auth"])
@@ -10,7 +10,7 @@ auth_router = APIRouter(prefix="/api/auth", tags=["Auth"])
 
 @auth_router.post("/register", response_model=UserResponse)
 async def create_user(db: DB_Session, request_body: UserCreate):
-    new_user = await add_user(request_body, db)
+    new_user = await user_service.add_user(request_body, db)
     return new_user.to_dict()
 
 
