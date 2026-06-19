@@ -21,10 +21,10 @@ async def create(request: TaskCreate, db: DB_Session, user: Current_User_Depende
 
 @task_router.get("/", response_model=list[TaskResponse])
 async def get_my_tasks(
-    db: DB_Session, user: Current_User_Dependency, skip: int = 0, limit: int = 10
+    db: DB_Session, user: Current_User_Dependency, offset: int = 0, limit: int = 10
 ):
     try:
-        tasks = await task_service.fetch_my_tasks(db, user, skip, limit)
+        tasks = await task_service.fetch_my_tasks(db, user, offset, limit)
     except DatabaseError:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
