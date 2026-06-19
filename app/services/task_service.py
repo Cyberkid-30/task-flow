@@ -1,5 +1,5 @@
 from ..core.database import AsyncSession
-from sqlalchemy import or_, select
+from sqlalchemy import or_, select, and_
 from sqlalchemy.orm import selectinload
 from ..models.task_model import Task, TaskStatus
 from ..schemas.task_schema import TaskCreate, TaskUpdate
@@ -9,8 +9,10 @@ from datetime import datetime
 
 
 async def create_task(task: TaskCreate, db: AsyncSession, user: UserResponse):
-    result = await db.execute(select(Task).where(Task.title == task.title))
-    existing_task = result.scalar_one().owner
+    result = await db.execute(
+        select(Task).where(and_(Task.title == task.title, Task.owner_id == user.id))
+    )
+    existing_task = result.scalar_one_or_none()
     if existing_task:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
