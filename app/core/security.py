@@ -11,7 +11,7 @@ from sqlalchemy import select
 from ..core.database import AsyncSession, get_async_db
 from ..models.user_model import User
 from ..schemas.user_schema import UserResponse
-from .config import Config
+from .config import settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
@@ -39,7 +39,7 @@ class JWTHandler:
     @staticmethod
     def encode_data(
         data: dict,
-        secret_key: str = Config.SECRET_KEY,  # type: ignore
+        secret_key: str = settings.SECRET_KEY,  # type: ignore
         algorithm: str = ALGORITHM,
         expires_in: timedelta | None = None,
     ) -> str:
@@ -47,7 +47,7 @@ class JWTHandler:
         if expires_in:
             expires = datetime.now() + expires_in
         else:
-            expires = datetime.now() + timedelta(minutes=Config.TOKEN_EXPIRE_MINUTES)
+            expires = datetime.now() + timedelta(minutes=settings.TOKEN_EXPIRE_MINUTES)
         to_encode.update({"exp": expires})
 
         return jwt.encode(to_encode, secret_key, algorithm=algorithm)
@@ -55,7 +55,7 @@ class JWTHandler:
     @staticmethod
     def decode_token(
         token: str,
-        secret_key: str = Config.SECRET_KEY,  # type: ignore
+        secret_key: str = settings.SECRET_KEY,  # type: ignore
         algorithms: list[str] = [ALGORITHM],
     ) -> dict:
         try:

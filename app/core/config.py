@@ -1,26 +1,30 @@
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
+from pydantic_settings import BaseSettings
 
 
-class Config:
-    SECRET_KEY = os.getenv("SECRET_KEY")
-    DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./test.db")
-    SYNC_DATABASE_URL = os.getenv("SYNC_DATABASE_URL", "sqlite:///./test.db")
-    TOKEN_EXPIRE_MINUTES = int(os.getenv("TOKEN_EXPIRE_MINUTES", "15"))
-    ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
+class Settings(BaseSettings):
+    SECRET_KEY: str = "your_default_secret_key_here"
+    DATABASE_URL: str = "sqlite+aiosqlite:///./test.db"
+    SYNC_DATABASE_URL: str = "sqlite:///./test.db"
+    TOKEN_EXPIRE_MINUTES: int = 15
+    ENVIRONMENT: str = "DEVELOPMENT"
 
-    @classmethod
-    def validate_config(cls):
+    def validate_config(self):
         """Validate that required environment variables are set"""
-        if not cls.SECRET_KEY:
+        if not self.SECRET_KEY:
             raise ValueError("SECRET_KEY environment variable is not set")
-        if not cls.DATABASE_URL:
+        if not self.DATABASE_URL:
             raise ValueError("DATABASE_URL environment variable is not set")
-        if len(cls.SECRET_KEY) < 32:
+        if len(self.SECRET_KEY) < 32:
             raise ValueError("SECRET_KEY must be at least 32 characters long")
-        if not cls.DATABASE_URL.startswith("postgresql+asyncpg://"):
+        if not self.DATABASE_URL.startswith("postgresql+asyncpg://"):
             raise ValueError(
                 "DATABASE_URL must be a valid PostgreSQL connection string"
             )
+
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+        case_sensitive = True
+
+
+settings = Settings()
