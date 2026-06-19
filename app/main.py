@@ -9,7 +9,7 @@ from sqlalchemy import text
 
 from .api.routes.auth import auth_router
 from .api.routes.task import task_router
-from .core.config import Config
+from .core.config import settings
 from .core.database import AsyncSessionLocal, init_db
 from .services.task_service import delete_completed_or_due_tasks
 
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 # Validate configuration on startup
 try:
-    Config.validate_config()
+    settings.validate_config()
     logger.info("Configuration validated successfully")
 except ValueError as e:
     logger.error(f"Configuration error: {e}")
@@ -104,7 +104,7 @@ allowed_origins = [
 ]
 
 # Allow all origins in development, specific origins in production
-if os.getenv("ENVIRONMENT") == "development":
+if settings.ENVIRONMENT == "DEVELOPMENT":
     allowed_origins = ["*"]
 else:
     # Add any additional production origins from environment
@@ -143,7 +143,7 @@ async def health_check():
         return {
             "status": "ok",
             "database": "connected",
-            "environment": Config.ENVIRONMENT,
+            "environment": settings.ENVIRONMENT,
         }
     except Exception as e:
         logger.error(f"Health check failed: {e}")
