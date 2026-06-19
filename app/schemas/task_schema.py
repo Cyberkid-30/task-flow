@@ -6,11 +6,12 @@ from .user_schema import ShowUser
 
 class TaskCreate(BaseModel):
     title: str
-    description: str | None = None
+    description: str = ""
     status: TaskStatus | None = TaskStatus.todo
     due_date: date | None = None
 
-    @field_validator("due_date")  # type: ignore
+    @field_validator("due_date")
+    @classmethod
     def parse_due_date(cls, v):
         if v is None:
             return None
@@ -31,12 +32,13 @@ class TaskCreate(BaseModel):
 
 
 class TaskUpdate(BaseModel):
-    title: str
-    description: str
-    status: TaskStatus = TaskStatus.todo
+    title: str | None = None
+    description: str | None = None
+    status: TaskStatus | None = None
     due_date: date | None = None
 
-    @field_validator("due_date")  # type: ignore
+    @field_validator("due_date")
+    @classmethod
     def parse_due_date(cls, v):
         if v is None:
             return None
@@ -59,9 +61,9 @@ class TaskUpdate(BaseModel):
 class TaskResponse(BaseModel):
     id: str
     title: str
-    description: str | None = None
+    description: str
     status: TaskStatus
-    due_date: date
+    due_date: date | None = None
     owner: ShowUser
 
     class Config:
