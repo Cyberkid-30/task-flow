@@ -53,6 +53,6 @@ class Task(Base):
             "due_date": self.due_date.isoformat() if self.due_date else None,
             "owner_id": str(self.owner_id),
             "owner": self.owner.to_dict() if self.owner else None,
-            "created_at": self.created_at,
-            "updated_at": self.updated_at,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
         }
